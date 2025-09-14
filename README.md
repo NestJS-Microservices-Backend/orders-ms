@@ -4,7 +4,7 @@ A robust and scalable microservice for managing orders, built with NestJS, Prism
 
 ## Description
 
-This microservice is part of a larger backend system. Its primary responsibility is to handle all order-related operations, including creation, retrieval, and status changes. It uses Prisma as its ORM for database interactions with PostgreSQL and is designed to be run in a containerized environment using Docker.
+This microservice is part of a larger backend system. Its primary responsibility is to handle all order-related operations, including creation, retrieval (with pagination), and status changes. It uses Prisma as its ORM for database interactions with PostgreSQL and is designed to be run in a containerized environment using Docker.
 
 ## Table of Contents
 
@@ -104,11 +104,12 @@ This microservice listens for the following TCP message patterns:
 
 -   `createOrder`: Creates a new order.
     -   **Payload:** `CreateOrderDto`
--   `findAllOrders`: Retrieves all orders.
+-   `findAllOrders`: Retrieves a paginated list of orders. Can be filtered by status.
+    -   **Payload:** `OrderPaginationDto`
 -   `findOneOrder`: Retrieves a single order by its ID.
     -   **Payload:** `{ id: string }`
 -   `changeOrderStatus`: Changes the status of an order.
-    -   **Payload:** `UpdateOrderDto` (contains `id` and `status`)
+    -   **Payload:** `ChangeOrderStatusDto`
 
 ## Database Model
 
