@@ -4,7 +4,7 @@ A robust and scalable microservice for managing orders, built with NestJS, Prism
 
 ## Description
 
-This microservice is part of a larger backend system. Its primary responsibility is to handle all order-related operations, including creation, retrieval (with pagination), and status changes. It uses Prisma as its ORM for database interactions with PostgreSQL and is designed to be run in a containerized environment using Docker.
+This microservice is part of a larger backend system. Its primary responsibility is to handle all order-related operations, including creation, retrieval (with pagination), and status changes. It uses Prisma as its ORM for database interactions with PostgreSQL and is designed to be run in a containerized environment using Docker. It communicates with other services via TCP.
 
 ## Table of Contents
 
@@ -17,6 +17,7 @@ This microservice is part of a larger backend system. Its primary responsibility
   - [1. Start the Database](#1-start-the-database)
   - [2. Run Database Migrations](#2-run-database-migrations)
   - [3. Run the Application](#3-run-the-application)
+- [Available Scripts](#available-scripts)
 - [Available Operations (Message Patterns)](#available-operations-message-patterns)
 - [Database Model](#database-model)
 - [Running Tests](#running-tests)
@@ -87,7 +88,7 @@ Once the database is running, apply the database schema using Prisma Migrate:
 ```bash
 npx prisma migrate dev
 ```
-This command will create the `Order` table and apply the defined schema from `prisma/schema.prisma`.
+This command will create the tables and apply the defined schema from `prisma/schema.prisma`.
 
 ### 3. Run the Application
 
@@ -97,6 +98,18 @@ To run the application in development mode with hot-reloading:
 npm run start:dev
 ```
 The microservice will be running and listening for messages.
+
+## Available Scripts
+
+- `npm run build`: Compiles the TypeScript code.
+- `npm run start:dev`: Starts the application in development mode with file watching.
+- `npm run start:prod`: Starts the application in production mode.
+- `npm run lint`: Lints the codebase.
+- `npm run format`: Formats the code using Prettier.
+- `npm test`: Runs unit tests.
+- `npm run test:e2e`: Runs end-to-end tests.
+- `npx prisma migrate dev`: Runs database migrations.
+- `npx prisma studio`: Opens the Prisma Studio to view and edit data.
 
 ## Available Operations (Message Patterns)
 
@@ -113,26 +126,45 @@ This microservice listens for the following TCP message patterns:
 
 ## Database Model
 
-The `Order` model is defined in `prisma/schema.prisma` as follows:
+The data models are defined in `prisma/schema.prisma`.
 
+### Order Model
 ```prisma
-enum OrderStatus {
-  PENDING
-  DELIVERED
-  CANCELLED
-}
-
 model Order {
   id          String @id @default(uuid())
   totalAmount Float
   totalItems  Int
 
-  status OrderStatus
+  status OrderStatus @default(PENDING)
   paid   Boolean     @default(false)
   paidAt DateTime?
 
   createdAt DateTime @default(now())
   updateAt  DateTime @updatedAt
+
+  OrderItem OrderItem[]
+}
+```
+
+### OrderItem Model
+```prisma
+model OrderItem {
+  id        String @id @default(uuid())
+  productId Int
+  quantity  Int
+  price     Float
+
+  Order   Order?  @relation(fields: [orderId], references: [id])
+  orderId String?
+}
+```
+
+### OrderStatus Enum
+```prisma
+enum OrderStatus {
+  PENDING
+  DELIVERED
+  CANCELLED
 }
 ```
 
