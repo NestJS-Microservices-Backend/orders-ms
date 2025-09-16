@@ -3,9 +3,8 @@ import { HttpStatus, Inject, Injectable, Logger, OnModuleInit } from '@nestjs/co
 import { firstValueFrom } from 'rxjs';
 
 import { ChangeOrderStatusDto, CreateOrderDto, OrderPaginationDto } from './dto';
+import { NATS_SERVICE } from 'src/config';
 import { PrismaClient } from '../../generated/prisma';
-import { PRODUCT_SERVICE } from 'src/config';
-
 
 
 @Injectable()
@@ -14,7 +13,7 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
   private readonly logger = new Logger( 'OrderService' );
 
   constructor(
-    @Inject( PRODUCT_SERVICE ) private readonly productsClient: ClientProxy
+    @Inject( NATS_SERVICE ) private readonly client: ClientProxy
   ) { super(); }
 
   async onModuleInit() {
@@ -28,7 +27,7 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
       const productsIds = createOrderDto.items.map( item => item.productId );
 
       const products = await firstValueFrom(
-        this.productsClient.send( { cmd: 'validate_products' }, productsIds )
+        this.client.send( { cmd: 'validate_products' }, productsIds )
       );
 
       const totalAmount = createOrderDto.items.reduce( ( acc, orderItem ) => {
@@ -111,7 +110,16 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
   async findOne( id: string ) {
 
     const order = await this.order.findFirst( {
-      where: { id }
+      where: { id },
+      include: {
+        OrderItem: {
+          select: {
+            price: true,
+            quantity: true,
+            productId: true
+          }
+        }
+      }
     } );
 
     if ( !order ) {
@@ -121,7 +129,17 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
       } );
     }
 
-    return order;
+    const productIds = order.OrderItem.map( orderItem => orderItem.productId );
+
+    const products: any[] = await firstValueFrom( this.client.send( { cmd: 'validate_products' }, productIds ) );
+
+    return {
+      ...order,
+      OrderItem: order.OrderItem.map( orderItem => ( {
+        ...orderItem,
+        name: products.find( product => product.id === orderItem.productId ).name
+      } ) )
+    };
   }
 
   async changeStatus( changeOrderStatusDto: ChangeOrderStatusDto ) {
