@@ -9,6 +9,7 @@ This microservice is part of a larger backend system. Its primary responsibility
 ## Table of Contents
 
 - [Technologies](#technologies)
+- [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
@@ -16,7 +17,8 @@ This microservice is part of a larger backend system. Its primary responsibility
 - [Running the Application](#running-the-application)
   - [1. Start the Database](#1-start-the-database)
   - [2. Run Database Migrations](#2-run-database-migrations)
-  - [3. Run the Application](#3-run-the-application)
+  - [3. Run the Application (Development)](#3-run-the-application-development)
+- [Running in Production (Docker)](#running-in-production-docker)
 - [Available Scripts](#available-scripts)
 - [Available Operations (Message Patterns)](#available-operations-message-patterns)
 - [Database Model](#database-model)
@@ -29,6 +31,20 @@ This microservice is part of a larger backend system. Its primary responsibility
 - [PostgreSQL](https://www.postgresql.org/)
 - [Docker](https://www.docker.com/)
 - [TypeScript](https://www.typescriptlang.org/)
+
+## Project Structure
+
+```
+src/
+├── common/         # Shared modules, DTOs, and filters
+├── config/         # Environment variable management
+├── orders/         # Core business logic for orders
+│   ├── dto/        # Data Transfer Objects for orders
+│   ├── enum/       # Enums related to orders
+│   └── ...
+├── transports/     # Microservice transport layer setup (e.g., NATS)
+└── main.ts         # Application entry point
+```
 
 ## Getting Started
 
@@ -90,7 +106,7 @@ npx prisma migrate dev
 ```
 This command will create the tables and apply the defined schema from `prisma/schema.prisma`.
 
-### 3. Run the Application
+### 3. Run the Application (Development)
 
 To run the application in development mode with hot-reloading:
 
@@ -98,6 +114,27 @@ To run the application in development mode with hot-reloading:
 npm run start:dev
 ```
 The microservice will be running and listening for messages.
+
+## Running in Production (Docker)
+
+To build and run the application in a production-like environment using Docker:
+
+1.  **Build the Docker image:**
+    ```bash
+    docker build -t orders-ms .
+    ```
+
+2.  **Run using Docker Compose:**
+    The provided `docker-compose.yml` is configured for development (e.g., mounting volumes). For a production deployment, you would typically use a separate `docker-compose.prod.yml` or adapt the existing one to run the pre-built image without volume mounts for source code.
+
+    However, you can run the production build with the existing compose file:
+    ```bash
+    # Ensure the database is running
+    docker-compose up -d orders-db
+
+    # Build and start the application service
+    docker-compose up --build app
+    ```
 
 ## Available Scripts
 
